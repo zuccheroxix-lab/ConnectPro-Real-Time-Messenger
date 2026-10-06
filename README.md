@@ -1,108 +1,117 @@
-# PulseChat - Realtime Verified Direct Messaging App
+# PulseChat - Realtime Messaging, Premium Codes & Customization Platform
 
-PulseChat is an original, modern Android messaging application built entirely with Kotlin, Jetpack Compose (Material 3), and Firebase Cloud Backend (Auth, Cloud Firestore, Cloud Messaging).
+PulseChat adalah aplikasi pesan instan modern berbasis **Kotlin** dan **Jetpack Compose (Material Design 3)** dengan backend **Google Firebase (Authentication, Cloud Firestore, Cloud Messaging)** yang dilengkapi sistem **Premium Code**, **Daily Spinner**, **Custom Check Messaging**, dan **Admin Panel**.
 
 ---
 
-## Key Features & Architecture
+## 📱 Ringkasan Fitur Aplikasi
 
-### 1. Carrier Phone Authentication & Real SMS OTP
-- Primary registration and login via mobile phone number with country code picker.
-- Live carrier verification through Firebase Phone Authentication (`PhoneAuthProvider`).
-- 60-second countdown for resend cooldown.
-- Protection against brute-force attacks: 5-attempt limit with automatic session locking.
-- Expiration checks and server-side verification.
+### 1. Carrier Phone Authentication & SMS OTP
+- Login & Register utama menggunakan nomor ponsel internasional dengan kode negara.
+- Verifikasi SMS OTP melalui Firebase Phone Authentication (`PhoneAuthProvider`).
+- Dilengkapi timer cooldown 60 detik untuk kirim ulang OTP, validasi batas percobaan, dan penanganan rate limiting.
 
 ### 2. User Profiles & Unique Username Validation
-- Mandatory profile creation upon initial registration.
-- Unique username (`@username`) validated directly against Cloud Firestore to prevent duplicates.
-- Display name, bio, and profile avatar customization.
-- Permanent account deletion with complete data cleanup.
+- Pembuatan profil pengguna setelah login pertama (Display Name, Username unik, Foto Profil, Bio).
+- Validasi username (`@username`) secara real-time langsung di Firestore untuk mencegah duplikasi.
 
-### 3. Home & Realtime Chat List
-- Real-time conversation list ordered by recent message timestamp.
-- Partner avatar, display name, username, last message snippet, and timestamp.
-- Unread message counter badge.
-- Live online indicator and presence tracking.
-- Search conversations filter and New Chat FAB.
+### 3. Realtime 1-on-1 Chat & Centang Pengiriman
+- Obrolan dua arah instan dengan sinkronisasi Cloud Firestore.
+- **1 Centang (`✓`)**: Pesan tersimpan di server.
+- **2 Centang (`✓✓`)**: Pesan terkirim ke perangkat penerima (`deliveredAt`).
+- **2 Centang Biru (`✓✓` Cyan/Biru)**: Pesan telah dibaca oleh penerima (`readAt`).
+- Dukungan quote reply, copy pesan, dan hapus pesan sendiri.
 
-### 4. Real User Search
-- Search users in real time directly from Cloud Firestore using prefix queries.
-- Instant conversation initiation from search results.
+### 4. Sistem Entitlement & Paket Premium
+- Paket didukung: `FREE`, `TRIAL`, `PREMIUM` (30 hari), `PERMANENT`, dan `CUSTOM_CHECK`.
+- Validasi status dan masa berlaku diproses di server-side (`user_entitlements`).
+- Alur Pembayaran Manual: Pengguna memilih paket di aplikasi -> melihat instruksi dan rekening -> menekan "Chat Admin" -> Admin memverifikasi mutasi dan menerbitkan kode voucher.
 
-### 5. Realtime 1-on-1 Chat
-- Instant bidirectional messaging powered by Cloud Firestore real-time snapshot listeners.
-- Message reply preview with quote reference.
-- Copy message text to clipboard.
-- Soft-delete own messages for both participants.
-- Auto-scroll to latest messages.
+### 5. Sistem Redeem Kode Premium Atomik
+- Kode dibuat secara eksklusif oleh Admin Panel.
+- Menggunakan `db.runTransaction` Firestore untuk mencegah race condition / penggunaan ganda.
+- Status kode: `AVAILABLE`, `USED`, `EXPIRED`, `REVOKED`.
 
-### 6. Authentic Message Status & Ticks System
-- **1 Tick (`✓`)**: Message stored on the server.
-- **2 Ticks (`✓✓`)**: Message delivered to receiver's device (`deliveredAt`).
-- **2 Blue Ticks (`✓✓` in Cyan/Blue)**: Message actively read by receiver (`readAt`).
-- Status is updated and synchronized via Cloud Firestore in real time.
+### 6. Premium Spinner (Daily Fortune Wheel)
+- Kanvas roda berputar interaktif dengan animasi halus.
+- Jatah putaran harian (1 gratis per 24 jam) + putaran bonus dari paket / voucher.
+- Penentuan hadiah secara server-side: *ZONK / Coba Lagi*, *Trial 1 Hari*, *Trial 3 Hari*, *Custom Check 7 Hari*, *+1 Extra Spin*, *Premium 7 Hari*, hingga *Jackpot Permanent*.
+- Riwayat spin tercatat ke Firestore (`spin_history`).
 
-### 7. Free & Premium Subscription System
-- **Free Account**: Full access to core 1-on-1 realtime messaging.
-- **Premium Account**:
-  - Exclusive Verified Blue Badge (`VerifiedBadge`) displayed on profile and conversation headers.
-  - Priority delivery indicator.
-  - Custom Neon Accent chat theme tokens.
-  - Unlimited user search.
-- Server-side subscription validation: checks `/subscriptions/{userId}` for `status == "active"` and `expiresAt > currentTimeMillis()`. Automatic expiry handling.
+### 7. Custom Check Styling
+- Pemilik akses Custom Check dapat mengubah warna centang (Neon Cyan, Electric Blue, Purple Glow, Pink Neon, Emerald Green, Gold Amber, Custom Hex) dan style (Classic, Shield, Glow).
+- Centang pada obrolan dirender secara dinamis sesuai style yang dipilih pengguna.
 
-### 8. Payment Provider Architecture
-- Integrated Google Play In-App Billing / Merchant Backend structure (`PaymentBillingService`).
-- Zero simulated transactions. If Google Play credentials or backend verification webhooks are not yet connected, the application provides clear setup guidance.
-
-### 9. Push Notifications
-- Integrated `PulseFirebaseMessagingService` with Android Notification Channel (`pulse_messages`).
-- Supports opening specific conversations directly from push notifications.
-
-### 10. Contact Blocking
-- Block and unblock contacts with database persistence.
-- Blocked contacts cannot send messages or view active presence.
+### 8. Admin Panel Terproteksi
+- Dashboard statistik pengguna, kode aktif, dan antrean pembayaran.
+- Generator kode batch dengan pemilihan durasi dan paket.
+- Manajemen pengguna: cari user, grant/revoke entitlement, set role Admin.
+- Konfigurasi paket dan hadiah spinner.
+- Audit log aktivitas administratif.
 
 ---
 
-## Configuration Guide
+## 📦 Struktur Build & File APK
 
-### 1. Firebase Setup (Live SMS OTP, Firestore, FCM)
-1. Create a project at [Firebase Console](https://console.firebase.google.com/).
-2. Add an Android app with package name: `com.aistudio.pulsechat.kvyqtz`.
-3. Add your SHA-1 and SHA-256 fingerprint in Firebase Project Settings (required for Phone Auth & SafetyNet/reCAPTCHA).
-4. In **Authentication -> Sign-in method**, enable **Phone**.
-   - *(Optional for testing)*: Under "Phone numbers for testing", add `+6281234567890` with test code `123456` to test without carrier SMS fees.
-5. In **Firestore Database**, create a database and publish the contents of `firestore.rules`.
-6. Download `google-services.json` and place it in the `app/` directory.
+| Build Variant | Nama File APK | Lokasi Output Build | Deskripsi |
+| :--- | :--- | :--- | :--- |
+| **Debug** | `app-debug.apk` | `app/build/outputs/apk/debug/app-debug.apk` | APK development yang sudah ditandatangani dengan keystore debug dan siap diinstall langsung di perangkat Android. |
+| **Release** | `app-release.apk` | `app/build/outputs/apk/release/app-release.apk` | APK produksi yang ditandatangani dengan upload signing keystore resmi. |
 
-### 2. Google Play Billing Setup
-1. Publish the application on Google Play Console.
-2. In Monetization -> Subscriptions, create products:
-   - `pulse_monthly_pro`
-   - `pulse_annual_pro`
-3. Configure a server-side Cloud Function webhook to verify purchase tokens against the Google Play Developer API and update `/subscriptions/{userId}`.
+### Versi Aplikasi
+- **Application ID:** `com.aistudio.pulsechat.kvyqtz`
+- **versionName:** `1.0.0`
+- **versionCode:** `1`
 
 ---
 
-## Building the APKs
+## 🛠️ Cara Menjalankan Build Secara Mandiri
 
-To build the APKs locally or in CI:
-
+### 1. Build Debug APK
 ```bash
-# Build Debug APK
-gradle :app:assembleDebug
-
-# Build Release APK
-gradle :app:assembleRelease
+gradle assembleDebug
 ```
+Output APK valid:
+`app/build/outputs/apk/debug/app-debug.apk` (Ukuran ~28 MB)
 
-Build outputs:
-- **Debug APK**: `app/build/outputs/apk/debug/app-debug.apk`
-- **Release APK**: `app/build/outputs/apk/release/app-release-unsigned.apk` (or signed if upload key provided)
+### 2. Build Release APK
+Untuk melakukan build release yang telah disign, siapkan variabel environment berikut:
+```bash
+export KEYSTORE_PATH="/path/to/my-upload-key.jks"
+export STORE_PASSWORD="your-store-password"
+export KEY_ALIAS="your-key-alias"
+export KEY_PASSWORD="your-key-password"
+
+gradle assembleRelease
+```
+Output APK:
+`app/build/outputs/apk/release/app-release.apk`
 
 ---
 
-## CI / CD
-GitHub Actions workflow is located at `.github/workflows/android-build.yml` to automatically build APKs and upload them as workflow artifacts upon every push.
+## 🚀 CI/CD GitHub Actions (`.github/workflows/build-apk.yml`)
+
+Workflow GitHub Actions telah dikonfigurasi untuk menjalankan build otomatis dan mempublikasikan file APK:
+
+1. **Trigger:** Push ke branch `main`/`master`, push Git Tag `v*`, atau manual dispatch melalui tab Actions.
+2. **Setup:** JDK 17 Temurin dan Android SDK build tools.
+3. **Build Debug APK:** Menghasilkan `app-debug.apk` dan memvalidasi keberadaan filenya.
+4. **Build Release APK:** Dijalankan secara otomatis jika secrets keystore tersedia di GitHub Repository.
+5. **Upload Artifacts:** Kedua APK diunggah sebagai GitHub Actions Artifacts (`app-debug` dan `app-release`) yang dapat diunduh langsung dari halaman run action.
+6. **GitHub Release:** Saat push git tag (contoh: `v1.0.0`), action akan membuat release resmi dan melampirkan asset `app-debug.apk` dan `app-release.apk`.
+
+### Konfigurasi GitHub Repository Secrets (Untuk Release Signing):
+Untuk mengaktifkan release signing otomatis di GitHub Actions tanpa memasukkan file keystore ke repository publik:
+1. Buka **Repository Settings -> Secrets and variables -> Actions**.
+2. Tambahkan secret berikut:
+   - `RELEASE_KEYSTORE_BASE64`: Isi dengan hasil perintah `base64 -w 0 my-upload-key.jks`
+   - `STORE_PASSWORD`: Password keystore
+   - `KEY_ALIAS`: Alias key dalam keystore (contoh: `upload`)
+   - `KEY_PASSWORD`: Password key alias
+
+---
+
+## ⬇️ Link Download & Akses APK
+
+- **Debug APK (Tersedia)**: Dapat diunduh dari folder build lokal `app/build/outputs/apk/debug/app-debug.apk` atau melalui GitHub Actions Artifact `app-debug`.
+- **Halaman Download di Aplikasi:** Terdapat pada menu **Settings -> APK & Build Info** di dalam aplikasi PulseChat.

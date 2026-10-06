@@ -38,6 +38,7 @@ fun SettingsScreen(
     onNavigateToSpinner: () -> Unit,
     onNavigateToCustomCheck: () -> Unit,
     onNavigateToAdminPanel: () -> Unit,
+    onNavigateToDownloadApk: () -> Unit = {},
     onLoggedOut: () -> Unit
 ) {
     val repository = remember { FirebaseRepository.getInstance() }
@@ -250,6 +251,14 @@ fun SettingsScreen(
                 subtitle = "Firebase setup, data policies, credentials info",
                 onClick = { showConfigInfoDialog = true },
                 testTag = "settings_backend_info_item"
+            )
+
+            SettingsItem(
+                icon = Icons.Default.DownloadForOffline,
+                title = "Pusat Download APK & Build",
+                subtitle = "Download app-debug.apk, info release & CI/CD",
+                onClick = onNavigateToDownloadApk,
+                testTag = "settings_download_apk_item"
             )
 
             if (currentUser?.isAdmin == true) {

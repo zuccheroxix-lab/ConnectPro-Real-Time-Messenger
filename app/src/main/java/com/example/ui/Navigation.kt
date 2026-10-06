@@ -20,6 +20,7 @@ object Routes {
     const val SPIN_HISTORY = "spin_history"
     const val CUSTOM_CHECK = "custom_check"
     const val ADMIN_PANEL = "admin_panel"
+    const val DOWNLOAD_APK = "download_apk"
 
     fun otp(verificationId: String, phoneNumber: String): String =
         "otp/${java.net.URLEncoder.encode(verificationId, "UTF-8")}/${java.net.URLEncoder.encode(phoneNumber, "UTF-8")}"

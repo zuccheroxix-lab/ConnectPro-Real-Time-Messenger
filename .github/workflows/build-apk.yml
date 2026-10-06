@@ -1,0 +1,110 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Package APKs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 2. Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: 3. Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: 4. Build Debug APK
+        run: |
+          echo "Starting Debug APK build..."
+          gradle assembleDebug --stacktrace
+
+      - name: 5. Verify Debug APK Exists
+        run: |
+          DEBUG_APK="app/build/outputs/apk/debug/app-debug.apk"
+          if [ ! -f "$DEBUG_APK" ]; then
+            echo "::error::File app-debug.apk tidak ditemukan setelah build!"
+            exit 1
+          fi
+          echo "DEBUG APK VALID: $(ls -lh $DEBUG_APK)"
+
+      - name: 6. Setup Release Signing Keystore (if configured in Secrets)
+        id: setup_signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          STORE_PASS: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS_SECRET: ${{ secrets.KEY_ALIAS }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$STORE_PASS" ] && [ -n "$KEY_PASS" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > release-upload-key.jks
+            echo "KEYSTORE_AVAILABLE=true" >> $GITHUB_OUTPUT
+            echo "Keystore successfully configured from GitHub Secrets."
+          else
+            echo "KEYSTORE_AVAILABLE=false" >> $GITHUB_OUTPUT
+            echo "Release keystore secrets not provided. Skipping signed release build."
+          fi
+
+      - name: 7. Build Release APK (Conditional on Signing Secrets)
+        if: steps.setup_signing.outputs.KEYSTORE_AVAILABLE == 'true'
+        env:
+          KEYSTORE_PATH: ${{ github.workspace }}/release-upload-key.jks
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "Starting Release APK build with configured signing..."
+          gradle assembleRelease --stacktrace
+          RELEASE_APK="app/build/outputs/apk/release/app-release.apk"
+          if [ ! -f "$RELEASE_APK" ]; then
+            echo "::error::File app-release.apk tidak ditemukan setelah build release!"
+            exit 1
+          fi
+          echo "RELEASE APK VALID: $(ls -lh $RELEASE_APK)"
+
+      - name: 8. Upload Debug APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: 9. Upload Release APK Artifact (if built)
+        if: steps.setup_signing.outputs.KEYSTORE_AVAILABLE == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: 10. Create GitHub Release & Upload Assets (On Tag or Dispatch)
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name || 'v1.0.0' }}
+          name: Release ${{ github.ref_name || 'v1.0.0' }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/release/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -259,11 +259,18 @@ fun AppNavHost(
                 onNavigateToSpinner = { navController.navigate(Routes.SPINNER) },
                 onNavigateToCustomCheck = { navController.navigate(Routes.CUSTOM_CHECK) },
                 onNavigateToAdminPanel = { navController.navigate(Routes.ADMIN_PANEL) },
+                onNavigateToDownloadApk = { navController.navigate(Routes.DOWNLOAD_APK) },
                 onLoggedOut = {
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(0) { inclusive = true }
                     }
                 }
+            )
+        }
+
+        composable(Routes.DOWNLOAD_APK) {
+            DownloadApkScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
