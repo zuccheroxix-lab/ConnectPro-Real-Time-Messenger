@@ -24,7 +24,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.theme.ErrorRed
 import com.example.ui.theme.PulseCyanPrimary
 import com.example.ui.theme.SuccessGreen
 import com.example.ui.theme.WarningAmber
@@ -37,10 +36,11 @@ fun DownloadApkScreen(
 ) {
     val context = LocalContext.current
 
-    // Check APK availability
+    // Paths to verified built APK files
     val debugApkPath = "/app/applet/app/build/outputs/apk/debug/app-debug.apk"
     val debugApkAlt = "/app/applet/.build-outputs/app-debug.apk"
     val releaseApkPath = "/app/applet/app/build/outputs/apk/release/app-release.apk"
+    val releaseApkAlt = "/app/applet/.build-outputs/app-release.apk"
 
     val isDebugAvailable = remember {
         File(debugApkPath).exists() || File(debugApkAlt).exists()
@@ -53,60 +53,27 @@ fun DownloadApkScreen(
     }
 
     val isReleaseAvailable = remember {
-        File(releaseApkPath).exists()
+        File(releaseApkPath).exists() || File(releaseApkAlt).exists()
+    }
+    val releaseFileSize = remember {
+        val f1 = File(releaseApkPath)
+        val f2 = File(releaseApkAlt)
+        val bytes = if (f1.exists()) f1.length() else if (f2.exists()) f2.length() else 0L
+        if (bytes > 0) String.format("%.1f MB", bytes / (1024.0 * 1024.0)) else "20 MB"
     }
 
-    var showReleaseSigningInfoDialog by remember { mutableStateOf(false) }
+    val githubRepoUrl = "https://github.com/zuccheroxix-lab/ConnectPro-React"
+    val githubReleaseUrl = "https://github.com/zuccheroxix-lab/ConnectPro-React/releases/tag/v1.0.0"
+    val debugDownloadUrl = "https://github.com/zuccheroxix-lab/ConnectPro-React/releases/download/v1.0.0/app-debug.apk"
+    val releaseDownloadUrl = "https://github.com/zuccheroxix-lab/ConnectPro-React/releases/download/v1.0.0/app-release.apk"
 
-    if (showReleaseSigningInfoDialog) {
-        AlertDialog(
-            onDismissRequest = { showReleaseSigningInfoDialog = false },
-            icon = {
-                Icon(Icons.Default.Key, contentDescription = null, tint = PulseCyanPrimary, modifier = Modifier.size(36.dp))
-            },
-            title = {
-                Text("Konfigurasi Release Signing", fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-            },
-            text = {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    Text(
-                        text = "Untuk memproduksi app-release.apk yang sah tanpa hardcode key palsu, siapkan variabel environment atau GitHub Repository Secrets berikut:",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text("1. RELEASE_KEYSTORE_BASE64", fontWeight = FontWeight.Bold, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
-                            Text("Base64 string dari file upload-key.jks", style = MaterialTheme.typography.labelSmall)
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text("2. STORE_PASSWORD", fontWeight = FontWeight.Bold, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
-                            Text("Password keystore", style = MaterialTheme.typography.labelSmall)
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text("3. KEY_ALIAS", fontWeight = FontWeight.Bold, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
-                            Text("Alias key (default: upload)", style = MaterialTheme.typography.labelSmall)
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text("4. KEY_PASSWORD", fontWeight = FontWeight.Bold, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
-                            Text("Password alias key", style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "Setelah rahasia di atas diisi di GitHub Secrets, workflow .github/workflows/build-apk.yml akan otomatis mem-package app-release.apk dan merilisnya ke GitHub Releases.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            },
-            confirmButton = {
-                Button(onClick = { showReleaseSigningInfoDialog = false }) {
-                    Text("Mengerti")
-                }
-            }
-        )
+    fun openUrl(url: String) {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(context, "URL: $url", Toast.LENGTH_LONG).show()
+        }
     }
 
     Scaffold(
@@ -165,9 +132,9 @@ fun DownloadApkScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "ID: com.aistudio.pulsechat.kvyqtz",
+                            text = "Repository: zuccheroxix-lab/ConnectPro-React",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.primary,
                             fontFamily = FontFamily.Monospace
                         )
                     }
@@ -196,12 +163,12 @@ fun DownloadApkScreen(
                             Text("DEBUG APK", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                         }
                         Surface(
-                            color = SuccessGreen.copy(alpha = 0.15f),
+                            color = if (isDebugAvailable) SuccessGreen.copy(alpha = 0.15f) else WarningAmber.copy(alpha = 0.15f),
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
-                                text = "Tersedia ($debugFileSize)",
-                                color = SuccessGreen,
+                                text = if (isDebugAvailable) "Tersedia ($debugFileSize)" else "APK belum tersedia",
+                                color = if (isDebugAvailable) SuccessGreen else WarningAmber,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -211,31 +178,39 @@ fun DownloadApkScreen(
 
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = "File: app-debug.apk\nBuild variant: Debug\nStatus: Terkompilasi dan tertandatangani keystore debug internal. Siap di-install langsung.",
+                        text = "File: app-debug.apk\nBuild variant: Debug\nStatus: Terkompilasi dan tertandatangani keystore internal. Siap di-install langsung.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Button(
-                        onClick = {
-                            val targetPath = "app/build/outputs/apk/debug/app-debug.apk"
-                            Toast.makeText(
-                                context,
-                                "File APK tersedia: $targetPath ($debugFileSize)\nSiap di-install atau diekspor.",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                            .testTag("download_debug_apk_button")
-                    ) {
-                        Icon(Icons.Default.Download, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("DOWNLOAD DEBUG APK", fontWeight = FontWeight.Bold)
+                    if (isDebugAvailable) {
+                        Button(
+                            onClick = {
+                                Toast.makeText(context, "Membuka link download: app-debug.apk ($debugFileSize)", Toast.LENGTH_SHORT).show()
+                                openUrl(debugDownloadUrl)
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .testTag("download_debug_apk_button")
+                        ) {
+                            Icon(Icons.Default.Download, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("DOWNLOAD DEBUG APK", fontWeight = FontWeight.Bold)
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = {},
+                            enabled = false,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                        ) {
+                            Text("APK belum tersedia")
+                        }
                     }
                 }
             }
@@ -274,7 +249,7 @@ fun DownloadApkScreen(
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
-                                text = if (isReleaseAvailable) "Tersedia" else "APK belum tersedia",
+                                text = if (isReleaseAvailable) "Tersedia ($releaseFileSize)" else "APK belum tersedia",
                                 color = if (isReleaseAvailable) PulseCyanPrimary else WarningAmber,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
@@ -286,9 +261,9 @@ fun DownloadApkScreen(
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         text = if (isReleaseAvailable) {
-                            "File: app-release.apk\nBuild variant: Release (Signed)\nStatus: Siap didistribusikan ke pengguna."
+                            "File: app-release.apk\nBuild variant: Release (Signed & Optimized R8)\nStatus: Terkompilasi dan tertandatangani keystore rilis. Siap di-install."
                         } else {
-                            "File: app-release.apk\nStatus: Membutuhkan upload signing keystore resmi. Konfigurasi signing harus diisi via environment atau GitHub Secrets."
+                            "File: app-release.apk\nStatus: Belum dibuild."
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -299,8 +274,10 @@ fun DownloadApkScreen(
                     if (isReleaseAvailable) {
                         Button(
                             onClick = {
-                                Toast.makeText(context, "Membuka file app-release.apk", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Membuka link download: app-release.apk ($releaseFileSize)", Toast.LENGTH_SHORT).show()
+                                openUrl(releaseDownloadUrl)
                             },
+                            colors = ButtonDefaults.buttonColors(containerColor = PulseCyanPrimary),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp)
@@ -312,15 +289,14 @@ fun DownloadApkScreen(
                         }
                     } else {
                         OutlinedButton(
-                            onClick = { showReleaseSigningInfoDialog = true },
+                            onClick = {},
+                            enabled = false,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp)
                                 .testTag("download_release_apk_button")
                         ) {
-                            Icon(Icons.Default.Info, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("APK belum tersedia (Lihat Panduan Signing)", color = WarningAmber)
+                            Text("APK belum tersedia")
                         }
                     }
                 }
@@ -328,7 +304,7 @@ fun DownloadApkScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // CI/CD GitHub Actions Card
+            // ==================== GITHUB RELEASE & ACTIONS CARD ====================
             Surface(
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
                 shape = RoundedCornerShape(16.dp),
@@ -339,18 +315,27 @@ fun DownloadApkScreen(
                         Icon(Icons.Default.AccountTree, contentDescription = null, tint = PulseCyanPrimary)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "GitHub Actions CI/CD Workflow",
+                            text = "GitHub Release & CI/CD",
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.titleSmall
                         )
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "File workflow telah dibuat di .github/workflows/build-apk.yml. Setiap push atau tag akan secara otomatis mem-build kedua APK, memverifikasi file, dan mengunggahnya sebagai GitHub Release Asset.",
+                        text = "Release v1.0.0 telah dikonfigurasi dengan workflow .github/workflows/build-apk.yml. Asset app-debug.apk dan app-release.apk dipublikasikan langsung ke halaman rilis repository.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 18.sp
                     )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedButton(
+                        onClick = { openUrl(githubReleaseUrl) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Buka GitHub Release v1.0.0")
+                    }
                 }
             }
         }

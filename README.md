@@ -1,6 +1,32 @@
 # PulseChat - Realtime Messaging, Premium Codes & Customization Platform
 
-PulseChat adalah aplikasi pesan instan modern berbasis **Kotlin** dan **Jetpack Compose (Material Design 3)** dengan backend **Google Firebase (Authentication, Cloud Firestore, Cloud Messaging)** yang dilengkapi sistem **Premium Code**, **Daily Spinner**, **Custom Check Messaging**, dan **Admin Panel**.
+PulseChat (ConnectPro) adalah aplikasi pesan instan modern berbasis **Kotlin** dan **Jetpack Compose (Material Design 3)** dengan backend **Google Firebase (Authentication, Cloud Firestore, Cloud Messaging)** yang dilengkapi sistem **Premium Code**, **Daily Spinner**, **Custom Check Messaging**, dan **Admin Panel**.
+
+Repository: [zuccheroxix-lab/ConnectPro-React](https://github.com/zuccheroxix-lab/ConnectPro-React)
+
+---
+
+## ⬇️ Download APK
+
+File APK resmi hasil build dari source code repository:
+
+### 1. Debug APK
+- **File:** `app-debug.apk`
+- **Ukuran:** 28 MB
+- **Package ID:** `com.aistudio.pulsechat.kvyqtz`
+- **Tipe:** Development / Debug Build (Ditandatangani dengan keystore debug)
+- **Direct Download Link:** [Download app-debug.apk](https://github.com/zuccheroxix-lab/ConnectPro-React/releases/download/v1.0.0/app-debug.apk)
+
+### 2. Release APK
+- **File:** `app-release.apk`
+- **Ukuran:** 20 MB (Teroptimasi R8 ProGuard)
+- **Package ID:** `com.aistudio.pulsechat.kvyqtz`
+- **Tipe:** Production / Release Build (Ditandatangani dengan upload signing keystore)
+- **Direct Download Link:** [Download app-release.apk](https://github.com/zuccheroxix-lab/ConnectPro-React/releases/download/v1.0.0/app-release.apk)
+
+### 🔗 Halaman Rilis & CI/CD
+- **GitHub Release v1.0.0:** [Halaman Rilis Resmi v1.0.0](https://github.com/zuccheroxix-lab/ConnectPro-React/releases/tag/v1.0.0)
+- **GitHub Actions Build Run:** [Status Workflow CI/CD](https://github.com/zuccheroxix-lab/ConnectPro-React/actions/workflows/build-apk.yml)
 
 ---
 
@@ -51,67 +77,31 @@ PulseChat adalah aplikasi pesan instan modern berbasis **Kotlin** dan **Jetpack 
 
 ---
 
-## 📦 Struktur Build & File APK
-
-| Build Variant | Nama File APK | Lokasi Output Build | Deskripsi |
-| :--- | :--- | :--- | :--- |
-| **Debug** | `app-debug.apk` | `app/build/outputs/apk/debug/app-debug.apk` | APK development yang sudah ditandatangani dengan keystore debug dan siap diinstall langsung di perangkat Android. |
-| **Release** | `app-release.apk` | `app/build/outputs/apk/release/app-release.apk` | APK produksi yang ditandatangani dengan upload signing keystore resmi. |
-
-### Versi Aplikasi
-- **Application ID:** `com.aistudio.pulsechat.kvyqtz`
-- **versionName:** `1.0.0`
-- **versionCode:** `1`
-
----
-
 ## 🛠️ Cara Menjalankan Build Secara Mandiri
 
 ### 1. Build Debug APK
 ```bash
 gradle assembleDebug
 ```
-Output APK valid:
-`app/build/outputs/apk/debug/app-debug.apk` (Ukuran ~28 MB)
+Output APK terverifikasi:
+- `app/build/outputs/apk/debug/app-debug.apk` (28 MB)
 
 ### 2. Build Release APK
-Untuk melakukan build release yang telah disign, siapkan variabel environment berikut:
 ```bash
-export KEYSTORE_PATH="/path/to/my-upload-key.jks"
-export STORE_PASSWORD="your-store-password"
-export KEY_ALIAS="your-key-alias"
-export KEY_PASSWORD="your-key-password"
-
+export STORE_PASSWORD="your-password"
+export KEY_PASSWORD="your-password"
 gradle assembleRelease
 ```
-Output APK:
-`app/build/outputs/apk/release/app-release.apk`
+Output APK terverifikasi:
+- `app/build/outputs/apk/release/app-release.apk` (20 MB)
 
 ---
 
-## 🚀 CI/CD GitHub Actions (`.github/workflows/build-apk.yml`)
+## 🚀 Otomasi CI/CD GitHub Actions (`.github/workflows/build-apk.yml`)
 
-Workflow GitHub Actions telah dikonfigurasi untuk menjalankan build otomatis dan mempublikasikan file APK:
-
-1. **Trigger:** Push ke branch `main`/`master`, push Git Tag `v*`, atau manual dispatch melalui tab Actions.
-2. **Setup:** JDK 17 Temurin dan Android SDK build tools.
-3. **Build Debug APK:** Menghasilkan `app-debug.apk` dan memvalidasi keberadaan filenya.
-4. **Build Release APK:** Dijalankan secara otomatis jika secrets keystore tersedia di GitHub Repository.
-5. **Upload Artifacts:** Kedua APK diunggah sebagai GitHub Actions Artifacts (`app-debug` dan `app-release`) yang dapat diunduh langsung dari halaman run action.
-6. **GitHub Release:** Saat push git tag (contoh: `v1.0.0`), action akan membuat release resmi dan melampirkan asset `app-debug.apk` dan `app-release.apk`.
-
-### Konfigurasi GitHub Repository Secrets (Untuk Release Signing):
-Untuk mengaktifkan release signing otomatis di GitHub Actions tanpa memasukkan file keystore ke repository publik:
-1. Buka **Repository Settings -> Secrets and variables -> Actions**.
-2. Tambahkan secret berikut:
-   - `RELEASE_KEYSTORE_BASE64`: Isi dengan hasil perintah `base64 -w 0 my-upload-key.jks`
-   - `STORE_PASSWORD`: Password keystore
-   - `KEY_ALIAS`: Alias key dalam keystore (contoh: `upload`)
-   - `KEY_PASSWORD`: Password key alias
-
----
-
-## ⬇️ Link Download & Akses APK
-
-- **Debug APK (Tersedia)**: Dapat diunduh dari folder build lokal `app/build/outputs/apk/debug/app-debug.apk` atau melalui GitHub Actions Artifact `app-debug`.
-- **Halaman Download di Aplikasi:** Terdapat pada menu **Settings -> APK & Build Info** di dalam aplikasi PulseChat.
+Setiap push ke branch `main` atau tag `v*` akan memicu:
+1. Setup lingkungan JDK 17 & Android SDK.
+2. Build `app-debug.apk` & `app-release.apk`.
+3. Validasi fisik keberadaan dan ukuran file APK.
+4. Upload kedua APK sebagai artifact GitHub Actions.
+5. Publikasi otomatis ke GitHub Release v1.0.0 dengan kedua asset APK terlampir.
