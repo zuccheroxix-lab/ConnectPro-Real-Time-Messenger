@@ -1,0 +1,6 @@
+{
+  "name": "PulseChat",
+  "description": "Realtime messaging application with phone authentication, instant delivery receipts, subscriptions, and profile management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
